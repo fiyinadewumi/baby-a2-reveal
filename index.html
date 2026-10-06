@@ -279,9 +279,10 @@ footer a { color: var(--fg); font-weight: 600; }
 (function () {
   "use strict";
 
-  // Paste the Web app URL from your Google Apps Script deployment here (it ends in /exec).
+  // Paste your Web3Forms access key here. Each guess is emailed to the address you used to get the key.
   var CONFIG = {
-    endpoint: "https://script.google.com/macros/s/AKfycbw5fD0dir17Yp8X8doJc_zPCwECSMTHX5u6VbE9rrnzYRGZMFGNBfX7w7nuzOaHbOMqJQ/exec",
+    endpoint: "https://api.web3forms.com/submit",
+    accessKey: "2ff4ac4e-3ead-4d10-952d-baa65a1c4de1",
     redirectUrl: "https://drive.google.com/drive/folders/1wLRsEcadQuihVFcD71CK_xJqnD9jOt9I",
     redirectDelayMs: 2200,
     saveTimeoutMs: 5000
@@ -339,16 +340,27 @@ footer a { color: var(--fg); font-weight: 600; }
     submitBtn.disabled = true;
     submitBtn.textContent = "Sending...";
 
-    var configured = CONFIG.endpoint.indexOf("PASTE_") !== 0;
+    var configured = CONFIG.accessKey.indexOf("PASTE_") !== 0;
     var save;
     if (configured) {
-      var body = new URLSearchParams({ name: name, guess: guess });
+      var payload = {
+        access_key: CONFIG.accessKey,
+        subject: name + " guessed Team " + guess,
+        from_name: "Baby A Reveal",
+        name: name,
+        guess: guess,
+        botcheck: ""
+      };
       save = Promise.race([
-        fetch(CONFIG.endpoint, { method: "POST", mode: "no-cors", body: body }),
+        fetch(CONFIG.endpoint, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "Accept": "application/json" },
+          body: JSON.stringify(payload)
+        }),
         new Promise(function (resolve) { setTimeout(resolve, CONFIG.saveTimeoutMs); })
       ]).catch(function () {});
     } else {
-      console.warn("Guess not saved: set CONFIG.endpoint to your Apps Script Web app URL.");
+      console.warn("Guess not saved: set CONFIG.accessKey to your Web3Forms access key.");
       save = Promise.resolve();
     }
 
