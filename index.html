@@ -10,7 +10,8 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600..800&family=Figtree:wght@400..600&display=swap">
 <style>
 /* Layout: headline and welcome on the left, the guess card on the right; stacks to one column on phones.
-   Blue and pink are the only two accents, so the choice is the loudest thing on the page. */
+   Blue and pink carry the page. The word in the headline flips between boy and girl, the page tints toward
+   whichever team is picked, and a confetti burst fires on submit. Gold appears only in the confetti. */
 :root {
   --bg: #F6F7FC;
   --fg: #181B3A;
@@ -19,8 +20,11 @@
   --line: #D6DAEE;
   --boy: #2F63D8;
   --boy-wash: #E4ECFD;
+  --boy-glow: #CBDBFB;
   --girl: #CF3573;
   --girl-wash: #FBE4EE;
+  --girl-glow: #F8CBDD;
+  --gold: #F2B705;
   --on-team: #FFFFFF;
   --focus: #181B3A;
   --error: #B3261E;
@@ -37,8 +41,11 @@
     --line: #33376A;
     --boy: #4375E8;
     --boy-wash: #1F2A57;
+    --boy-glow: #2B3C85;
     --girl: #D9457F;
     --girl-wash: #3E1F3A;
+    --girl-glow: #5E2B55;
+    --gold: #F7CB4D;
     --focus: #EEF0FF;
     --error: #FF8A80;
     color-scheme: dark;
@@ -52,8 +59,11 @@
   --line: #33376A;
   --boy: #4375E8;
   --boy-wash: #1F2A57;
+  --boy-glow: #2B3C85;
   --girl: #D9457F;
   --girl-wash: #3E1F3A;
+  --girl-glow: #5E2B55;
+  --gold: #F7CB4D;
   --focus: #EEF0FF;
   --error: #FF8A80;
   color-scheme: dark;
@@ -75,6 +85,21 @@ body {
   font-size: 1.0625rem;
   line-height: 1.55;
 }
+
+/* The page tints toward the team that is picked. */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.6s ease;
+  background: radial-gradient(70rem 50rem at 50% 40%, var(--tint, transparent), transparent 70%);
+}
+body[data-team="boy"] { --tint: var(--boy-glow); }
+body[data-team="girl"] { --tint: var(--girl-glow); }
+body[data-team]::before { opacity: 1; }
 
 .shell {
   max-width: 62rem;
@@ -105,6 +130,23 @@ h1 {
   letter-spacing: -0.02em;
   text-wrap: balance;
 }
+.reveal-word { display: block; }
+
+/* The word that flips between boy and girl. */
+.flip { display: inline-grid; vertical-align: bottom; }
+.flip span {
+  grid-area: 1 / 1;
+  opacity: 0;
+  animation: swap 3.2s ease-in-out infinite;
+}
+.flip .b { color: var(--boy); }
+.flip .g { color: var(--girl); animation-delay: 1.6s; }
+@keyframes swap {
+  0% { opacity: 0; transform: translateY(40%); }
+  10%, 42% { opacity: 1; transform: none; }
+  52%, 100% { opacity: 0; transform: translateY(-40%); }
+}
+
 .lede { margin: 0 0 16px; max-width: 34rem; text-wrap: pretty; }
 .thanks { margin: 0; max-width: 34rem; color: var(--muted); }
 
@@ -174,15 +216,31 @@ input[type="text"]::placeholder { color: var(--muted); opacity: 0.8; }
   line-height: 1.1;
 }
 .face .state { margin-top: 6px; font-size: 0.8125rem; font-weight: 600; min-height: 1.2em; }
-.choice input:checked + .face { background: var(--team); color: var(--on-team); transform: translateY(-2px); }
-.choice input:checked + .face .state::before { content: "Your guess"; }
+.choice.boy input:hover + .face { transform: translateY(-2px) rotate(-1.2deg); }
+.choice.girl input:hover + .face { transform: translateY(-2px) rotate(1.2deg); }
+.choice input:checked + .face {
+  background: var(--team);
+  color: var(--on-team);
+  transform: translateY(-2px);
+  animation: pop 0.38s ease-out;
+}
+.choice.boy input:checked + .face .state::before { content: "Your guess \1F499"; }
+.choice.girl input:checked + .face .state::before { content: "Your guess \1F497"; }
 .choice input:focus-visible + .face { outline: 3px solid var(--focus); outline-offset: 3px; }
-.choice input:hover + .face { transform: translateY(-2px); }
+@keyframes pop {
+  0% { transform: scale(1); }
+  45% { transform: translateY(-6px) scale(1.07); }
+  100% { transform: translateY(-2px) scale(1); }
+}
 
-.error { margin: 8px 0 0; min-height: 1.3em; font-size: 0.9375rem; font-weight: 500; color: var(--error); }
+.error { margin: 8px 0 0; font-size: 0.9375rem; font-weight: 500; color: var(--error); }
+.error:empty { display: none; }
 
-button.go {
+.go {
+  display: block;
   width: 100%;
+  text-align: center;
+  text-decoration: none;
   padding: 15px 18px;
   font: inherit;
   font-weight: 700;
@@ -193,7 +251,7 @@ button.go {
   border-radius: 12px;
   cursor: pointer;
 }
-button.go:disabled { opacity: 0.6; cursor: progress; }
+.go:disabled { opacity: 0.6; cursor: progress; }
 .fine { margin: 14px 0 0; font-size: 0.9375rem; color: var(--muted); }
 
 .hp { position: absolute; left: -9999px; width: 1px; height: 1px; overflow: hidden; }
@@ -205,9 +263,20 @@ button.go:disabled { opacity: 0.6; cursor: progress; }
   font-weight: 800;
   font-size: 1.9rem;
   line-height: 1.1;
+  text-wrap: balance;
 }
 .done p { margin: 0 0 14px; }
 .done a { color: var(--fg); font-weight: 600; }
+.done a.go { color: var(--bg); font-weight: 700; }
+
+.confetti {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 50;
+}
 
 footer {
   max-width: 62rem;
@@ -218,8 +287,13 @@ footer {
 footer a { color: var(--fg); font-weight: 600; }
 
 @media (prefers-reduced-motion: reduce) {
-  .choice .face { transition: none; }
-  .choice input:checked + .face, .choice input:hover + .face { transform: none; }
+  .choice .face { transition: none; animation: none !important; }
+  .choice input:checked + .face,
+  .choice input:hover + .face { transform: none !important; }
+  body::before { transition: none; }
+  .flip { display: inline; }
+  .flip span { opacity: 1; animation: none; transform: none; }
+  .flip .g::before { content: " or "; color: var(--fg); }
 }
 </style>
 </head>
@@ -227,8 +301,8 @@ footer a { color: var(--fg); font-weight: 600; }
 <main class="shell">
   <section class="intro">
     <p class="eyebrow">Baby A</p>
-    <h1>We&rsquo;re having a&hellip;</h1>
-    <p class="lede">Dear family and friends, we&rsquo;re excited to share the gender of our second baby. Before you open the reveal, tell us your guess.</p>
+    <h1>We&rsquo;re having a&hellip; <span class="reveal-word"><span class="flip"><span class="b">boy?</span><span class="g">girl?</span></span></span></h1>
+    <p class="lede">Dear family and friends, we&rsquo;re excited to share the gender of our second baby. Before you open the reveal, pick a team and tell us your guess.</p>
     <p class="thanks">Thank you all so much for your love and prayers so far.</p>
   </section>
 
@@ -236,12 +310,12 @@ footer a { color: var(--fg); font-weight: 600; }
     <form id="guess-form" novalidate>
       <div class="field">
         <label class="label" for="name">Your name</label>
-        <input type="text" id="name" name="name" autocomplete="name" maxlength="80" placeholder="First and last name">
+        <input type="text" id="name" name="name" autocomplete="given-name" maxlength="80" placeholder="Your name or nickname">
         <p class="error" id="name-error"></p>
       </div>
 
       <fieldset class="field">
-        <legend>Your guess</legend>
+        <legend>Pick your team</legend>
         <div class="choices">
           <label class="choice boy">
             <input type="radio" name="guess" value="Boy">
@@ -260,13 +334,14 @@ footer a { color: var(--fg); font-weight: 600; }
       </div>
 
       <button class="go" type="submit" id="submit">Lock in my guess</button>
-      <p class="fine">After you submit, you will go straight to the reveal.</p>
+      <p class="fine">No take-backs. After you submit, you go straight to the reveal.</p>
     </form>
 
     <div class="done" id="done" hidden>
       <h2 id="done-title"></h2>
       <p id="done-text"></p>
-      <p>Taking you to the reveal&hellip; If nothing happens, <a id="done-link" href="#">open it here</a>.</p>
+      <p>Taking you to the reveal&hellip; If nothing happens, tap the button.</p>
+      <a class="go" id="done-link" href="#" rel="noopener">Open the reveal</a>
     </div>
   </section>
 </main>
@@ -279,14 +354,16 @@ footer a { color: var(--fg); font-weight: 600; }
 (function () {
   "use strict";
 
-  // Paste your Web3Forms access key here. Each guess is emailed to the address you used to get the key.
+  // Each guess is emailed to the address you used to get your Web3Forms access key.
   var CONFIG = {
     endpoint: "https://api.web3forms.com/submit",
     accessKey: "2ff4ac4e-3ead-4d10-952d-baa65a1c4de1",
     redirectUrl: "https://drive.google.com/drive/folders/1wLRsEcadQuihVFcD71CK_xJqnD9jOt9I",
-    redirectDelayMs: 2200,
+    redirectDelayMs: 1900,
     saveTimeoutMs: 5000
   };
+
+  var reduced = !!(window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches);
 
   var form = document.getElementById("guess-form");
   var nameInput = document.getElementById("name");
@@ -302,16 +379,81 @@ footer a { color: var(--fg); font-weight: 600; }
   doneLink.href = CONFIG.redirectUrl;
 
   form.addEventListener("change", function (ev) {
-    if (ev.target.name === "guess") guessError.textContent = "";
+    if (ev.target.name === "guess") {
+      guessError.textContent = "";
+      document.body.setAttribute("data-team", ev.target.value.toLowerCase());
+    }
   });
   nameInput.addEventListener("input", function () { nameError.textContent = ""; });
+
+  function cssVar(name) {
+    return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+  }
+
+  // A burst of confetti in the picked team's color, with a little of the other team and gold.
+  function confetti(x, y, guess) {
+    if (reduced) return;
+    var team = cssVar(guess === "Boy" ? "--boy" : "--girl");
+    var other = cssVar(guess === "Boy" ? "--girl" : "--boy");
+    var palette = [team, team, team, other, cssVar("--gold")];
+
+    var canvas = document.createElement("canvas");
+    canvas.className = "confetti";
+    canvas.setAttribute("aria-hidden", "true");
+    document.body.appendChild(canvas);
+
+    var dpr = window.devicePixelRatio || 1;
+    var w = window.innerWidth;
+    var h = window.innerHeight;
+    canvas.width = w * dpr;
+    canvas.height = h * dpr;
+    var ctx = canvas.getContext("2d");
+    ctx.scale(dpr, dpr);
+
+    var pieces = [];
+    for (var i = 0; i < 150; i++) {
+      var angle = -Math.PI / 2 + (Math.random() - 0.5) * 1.6;
+      var speed = 7 + Math.random() * 10;
+      pieces.push({
+        x: x, y: y,
+        vx: Math.cos(angle) * speed,
+        vy: Math.sin(angle) * speed,
+        w: 6 + Math.random() * 6,
+        h: 9 + Math.random() * 8,
+        r: Math.random() * 6.28,
+        vr: (Math.random() - 0.5) * 0.4,
+        c: palette[i % palette.length]
+      });
+    }
+
+    var t0 = performance.now();
+    function frame(now) {
+      ctx.clearRect(0, 0, w, h);
+      for (var j = 0; j < pieces.length; j++) {
+        var p = pieces[j];
+        p.vy += 0.3;
+        p.vx *= 0.99;
+        p.x += p.vx;
+        p.y += p.vy;
+        p.r += p.vr;
+        ctx.save();
+        ctx.translate(p.x, p.y);
+        ctx.rotate(p.r);
+        ctx.fillStyle = p.c;
+        ctx.fillRect(-p.w / 2, -p.h / 2, p.w, p.h);
+        ctx.restore();
+      }
+      if (now - t0 < 2800) { requestAnimationFrame(frame); } else { canvas.remove(); }
+    }
+    requestAnimationFrame(frame);
+  }
 
   function showThanks(name, guess) {
     form.hidden = true;
     done.hidden = false;
-    doneTitle.textContent = "Thank you, " + name + ".";
-    doneText.textContent = "You picked Team " + guess + ".";
-    setTimeout(function () { window.location.href = CONFIG.redirectUrl; }, CONFIG.redirectDelayMs);
+    doneTitle.textContent = "Locked in, " + name + "!";
+    doneText.textContent = "Team " + guess + " it is. No take-backs.";
+    setTimeout(function () { window.location.assign(CONFIG.redirectUrl); }, CONFIG.redirectDelayMs);
   }
 
   form.addEventListener("submit", function (ev) {
@@ -326,12 +468,12 @@ footer a { color: var(--fg); font-weight: 600; }
     guessError.textContent = "";
 
     if (!name) {
-      nameError.textContent = "Please add your name so we know who guessed.";
+      nameError.textContent = "Add your name so we know who to cheer for.";
       nameInput.focus();
       return;
     }
     if (!guess) {
-      guessError.textContent = "Pick Team Boy or Team Girl.";
+      guessError.textContent = "Pick a team first!";
       return;
     }
     if (trap) { showThanks(name, guess); return; }
@@ -339,6 +481,9 @@ footer a { color: var(--fg); font-weight: 600; }
     sending = true;
     submitBtn.disabled = true;
     submitBtn.textContent = "Sending...";
+
+    var rect = submitBtn.getBoundingClientRect();
+    confetti(rect.left + rect.width / 2, rect.top + rect.height / 2, guess);
 
     var configured = CONFIG.accessKey.indexOf("PASTE_") !== 0;
     var save;
