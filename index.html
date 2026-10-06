@@ -1,0 +1,360 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<title>Baby A Reveal</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600..800&family=Figtree:wght@400..600&display=swap">
+<style>
+/* Layout: headline and welcome on the left, the guess card on the right; stacks to one column on phones.
+   Blue and pink are the only two accents, so the choice is the loudest thing on the page. */
+:root {
+  --bg: #F6F7FC;
+  --fg: #181B3A;
+  --muted: #575C7E;
+  --card: #FFFFFF;
+  --line: #D6DAEE;
+  --boy: #2F63D8;
+  --boy-wash: #E4ECFD;
+  --girl: #CF3573;
+  --girl-wash: #FBE4EE;
+  --on-team: #FFFFFF;
+  --focus: #181B3A;
+  --error: #B3261E;
+  --font-display: "Bricolage Grotesque", "Avenir Next", "Segoe UI", system-ui, sans-serif;
+  --font-body: "Figtree", "Segoe UI", system-ui, sans-serif;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #12142B;
+    --fg: #EEF0FF;
+    --muted: #A5AACF;
+    --card: #1B1E3F;
+    --line: #33376A;
+    --boy: #4375E8;
+    --boy-wash: #1F2A57;
+    --girl: #D9457F;
+    --girl-wash: #3E1F3A;
+    --focus: #EEF0FF;
+    --error: #FF8A80;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #12142B;
+  --fg: #EEF0FF;
+  --muted: #A5AACF;
+  --card: #1B1E3F;
+  --line: #33376A;
+  --boy: #4375E8;
+  --boy-wash: #1F2A57;
+  --girl: #D9457F;
+  --girl-wash: #3E1F3A;
+  --focus: #EEF0FF;
+  --error: #FF8A80;
+  color-scheme: dark;
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0;
+  min-height: 100vh;
+  padding-inline: 16px;
+  padding-block: 40px 32px;
+  background-color: var(--bg);
+  background-image:
+    radial-gradient(50rem 34rem at 0% 0%, var(--boy-wash), transparent 62%),
+    radial-gradient(46rem 32rem at 100% 100%, var(--girl-wash), transparent 62%);
+  color: var(--fg);
+  font-family: var(--font-body);
+  font-size: 1.0625rem;
+  line-height: 1.55;
+}
+
+.shell {
+  max-width: 62rem;
+  margin-inline: auto;
+  display: grid;
+  gap: 32px;
+  align-items: center;
+}
+@media (min-width: 52rem) {
+  .shell { grid-template-columns: 1.1fr 1fr; gap: 56px; min-height: calc(100vh - 140px); }
+}
+
+.intro { min-width: 0; }
+.eyebrow {
+  margin: 0 0 12px;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+h1 {
+  margin: 0 0 20px;
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: clamp(2.6rem, 8vw, 4.6rem);
+  line-height: 1.02;
+  letter-spacing: -0.02em;
+  text-wrap: balance;
+}
+.lede { margin: 0 0 16px; max-width: 34rem; text-wrap: pretty; }
+.thanks { margin: 0; max-width: 34rem; color: var(--muted); }
+
+.card {
+  min-width: 0;
+  padding: 28px;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 20px;
+}
+@media (max-width: 30rem) { .card { padding: 20px; } }
+
+.field { margin: 0 0 22px; padding: 0; border: 0; min-width: 0; }
+label.label, legend {
+  display: block;
+  padding: 0;
+  margin-bottom: 8px;
+  font-weight: 600;
+}
+input[type="text"] {
+  width: 100%;
+  padding: 13px 14px;
+  font: inherit;
+  color: var(--fg);
+  background: var(--bg);
+  border: 1.5px solid var(--line);
+  border-radius: 12px;
+}
+input[type="text"]::placeholder { color: var(--muted); opacity: 0.8; }
+:focus-visible { outline: 3px solid var(--focus); outline-offset: 3px; }
+
+.choices { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.choice { position: relative; min-width: 0; }
+.choice input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+.choice .face {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 18px 16px 16px;
+  border: 2px solid var(--team);
+  border-radius: 16px;
+  background: var(--team-wash);
+  color: var(--fg);
+  transition: transform 0.15s ease, background-color 0.15s ease, color 0.15s ease;
+}
+.choice.boy { --team: var(--boy); --team-wash: var(--boy-wash); }
+.choice.girl { --team: var(--girl); --team-wash: var(--girl-wash); }
+.face .small {
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  opacity: 0.8;
+}
+.face .big {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 2rem;
+  line-height: 1.1;
+}
+.face .state { margin-top: 6px; font-size: 0.8125rem; font-weight: 600; min-height: 1.2em; }
+.choice input:checked + .face { background: var(--team); color: var(--on-team); transform: translateY(-2px); }
+.choice input:checked + .face .state::before { content: "Your guess"; }
+.choice input:focus-visible + .face { outline: 3px solid var(--focus); outline-offset: 3px; }
+.choice input:hover + .face { transform: translateY(-2px); }
+
+.error { margin: 8px 0 0; min-height: 1.3em; font-size: 0.9375rem; font-weight: 500; color: var(--error); }
+
+button.go {
+  width: 100%;
+  padding: 15px 18px;
+  font: inherit;
+  font-weight: 700;
+  font-size: 1.0625rem;
+  color: var(--bg);
+  background: var(--fg);
+  border: 0;
+  border-radius: 12px;
+  cursor: pointer;
+}
+button.go:disabled { opacity: 0.6; cursor: progress; }
+.fine { margin: 14px 0 0; font-size: 0.9375rem; color: var(--muted); }
+
+.hp { position: absolute; left: -9999px; width: 1px; height: 1px; overflow: hidden; }
+
+.done[hidden] { display: none; }
+.done h2 {
+  margin: 0 0 8px;
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 1.9rem;
+  line-height: 1.1;
+}
+.done p { margin: 0 0 14px; }
+.done a { color: var(--fg); font-weight: 600; }
+
+footer {
+  max-width: 62rem;
+  margin: 32px auto 0;
+  font-size: 0.9375rem;
+  color: var(--muted);
+}
+footer a { color: var(--fg); font-weight: 600; }
+
+@media (prefers-reduced-motion: reduce) {
+  .choice .face { transition: none; }
+  .choice input:checked + .face, .choice input:hover + .face { transform: none; }
+}
+</style>
+</head>
+<body>
+<main class="shell">
+  <section class="intro">
+    <p class="eyebrow">Baby A</p>
+    <h1>We&rsquo;re having a&hellip;</h1>
+    <p class="lede">Dear family and friends, we&rsquo;re excited to share the gender of our second baby. Before you open the reveal, tell us your guess.</p>
+    <p class="thanks">Thank you all so much for your love and prayers so far.</p>
+  </section>
+
+  <section class="card" aria-live="polite">
+    <form id="guess-form" novalidate>
+      <div class="field">
+        <label class="label" for="name">Your name</label>
+        <input type="text" id="name" name="name" autocomplete="name" maxlength="80" placeholder="First and last name">
+        <p class="error" id="name-error"></p>
+      </div>
+
+      <fieldset class="field">
+        <legend>Your guess</legend>
+        <div class="choices">
+          <label class="choice boy">
+            <input type="radio" name="guess" value="Boy">
+            <span class="face"><span class="small">Team</span><span class="big">Boy</span><span class="state"></span></span>
+          </label>
+          <label class="choice girl">
+            <input type="radio" name="guess" value="Girl">
+            <span class="face"><span class="small">Team</span><span class="big">Girl</span><span class="state"></span></span>
+          </label>
+        </div>
+        <p class="error" id="guess-error"></p>
+      </fieldset>
+
+      <div class="hp" aria-hidden="true">
+        <label>Leave this empty <input type="text" name="website" tabindex="-1" autocomplete="off"></label>
+      </div>
+
+      <button class="go" type="submit" id="submit">Lock in my guess</button>
+      <p class="fine">After you submit, you will go straight to the reveal.</p>
+    </form>
+
+    <div class="done" id="done" hidden>
+      <h2 id="done-title"></h2>
+      <p id="done-text"></p>
+      <p>Taking you to the reveal&hellip; If nothing happens, <a id="done-link" href="#">open it here</a>.</p>
+    </div>
+  </section>
+</main>
+
+<footer>
+  We&rsquo;re also sharing <a href="https://www.myregistry.com/giftlist/babyadewumi" rel="noopener">Baby A&rsquo;s wishlist</a>.
+</footer>
+
+<script>
+(function () {
+  "use strict";
+
+  // Paste the Web app URL from your Google Apps Script deployment here (it ends in /exec).
+  var CONFIG = {
+    endpoint: "https://script.google.com/macros/s/AKfycbw5fD0dir17Yp8X8doJc_zPCwECSMTHX5u6VbE9rrnzYRGZMFGNBfX7w7nuzOaHbOMqJQ/exec",
+    redirectUrl: "https://drive.google.com/drive/folders/1wLRsEcadQuihVFcD71CK_xJqnD9jOt9I",
+    redirectDelayMs: 2200,
+    saveTimeoutMs: 5000
+  };
+
+  var form = document.getElementById("guess-form");
+  var nameInput = document.getElementById("name");
+  var nameError = document.getElementById("name-error");
+  var guessError = document.getElementById("guess-error");
+  var submitBtn = document.getElementById("submit");
+  var done = document.getElementById("done");
+  var doneTitle = document.getElementById("done-title");
+  var doneText = document.getElementById("done-text");
+  var doneLink = document.getElementById("done-link");
+  var sending = false;
+
+  doneLink.href = CONFIG.redirectUrl;
+
+  form.addEventListener("change", function (ev) {
+    if (ev.target.name === "guess") guessError.textContent = "";
+  });
+  nameInput.addEventListener("input", function () { nameError.textContent = ""; });
+
+  function showThanks(name, guess) {
+    form.hidden = true;
+    done.hidden = false;
+    doneTitle.textContent = "Thank you, " + name + ".";
+    doneText.textContent = "You picked Team " + guess + ".";
+    setTimeout(function () { window.location.href = CONFIG.redirectUrl; }, CONFIG.redirectDelayMs);
+  }
+
+  form.addEventListener("submit", function (ev) {
+    ev.preventDefault();
+    if (sending) return;
+
+    var name = nameInput.value.trim();
+    var guess = form.elements["guess"].value;
+    var trap = form.elements["website"].value;
+
+    nameError.textContent = "";
+    guessError.textContent = "";
+
+    if (!name) {
+      nameError.textContent = "Please add your name so we know who guessed.";
+      nameInput.focus();
+      return;
+    }
+    if (!guess) {
+      guessError.textContent = "Pick Team Boy or Team Girl.";
+      return;
+    }
+    if (trap) { showThanks(name, guess); return; }
+
+    sending = true;
+    submitBtn.disabled = true;
+    submitBtn.textContent = "Sending...";
+
+    var configured = CONFIG.endpoint.indexOf("PASTE_") !== 0;
+    var save;
+    if (configured) {
+      var body = new URLSearchParams({ name: name, guess: guess });
+      save = Promise.race([
+        fetch(CONFIG.endpoint, { method: "POST", mode: "no-cors", body: body }),
+        new Promise(function (resolve) { setTimeout(resolve, CONFIG.saveTimeoutMs); })
+      ]).catch(function () {});
+    } else {
+      console.warn("Guess not saved: set CONFIG.endpoint to your Apps Script Web app URL.");
+      save = Promise.resolve();
+    }
+
+    save.then(function () { showThanks(name, guess); });
+  });
+})();
+</script>
+</body>
+</html>
